@@ -5,24 +5,19 @@ import { Card, CardContent } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
 import { Mic, MicOff, Send, Bot, User, Plus } from 'lucide-react';
-import { mockResponses } from '../data/mock';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const ChatInterface = () => {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "Hello! I'm Aura, your friendly AI assistant. How can I help you today?",
-      sender: 'ai',
-      timestamp: new Date(),
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [sessions, setSessions] = useState([
-    { id: 1, name: 'Current Session', active: true, lastMessage: 'Hello! I\'m Aura...' }
-  ]);
-  const [activeSession, setActiveSession] = useState(1);
+  const [sessions, setSessions] = useState([]);
+  const [activeSession, setActiveSession] = useState(null);
+  const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
   const recognition = useRef(null);
 
@@ -72,7 +67,7 @@ const ChatInterface = () => {
   };
 
   const sendMessage = async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || !activeSession) return;
 
     const userMessage = {
       id: Date.now(),
@@ -82,46 +77,114 @@ const ChatInterface = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageText = inputText;
     setInputText('');
     setIsLoading(true);
 
-    // Mock AI response with delay
-    setTimeout(() => {
+    try {
+      const response = await axios.post(`${API}/chat/send`, {
+        message: messageText,
+        session_id: activeSession
+      });
+
       const aiResponse = {
+        id: response.data.message_id,
+        text: response.data.response,
+        sender: 'ai',
+        timestamp: new Date(response.data.timestamp),
+      };
+      
+      setMessages(prev => [...prev, aiResponse]);
+      
+      // Refresh sessions to update last message
+      loadSessions();
+      
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorResponse = {
         id: Date.now() + 1,
-        text: mockResponses[Math.floor(Math.random() * mockResponses.length)],
+        text: "I'm sorry, I'm having trouble responding right now. Please try again!",
         sender: 'ai',
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages(prev => [...prev, errorResponse]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
-  const createNewSession = () => {
-    const newSessionId = Date.now();
-    const newSession = {
-      id: newSessionId,
-      name: `Session ${sessions.length + 1}`,
-      active: true,
-      lastMessage: 'New conversation started'
+  const createNewSession = async () => {
+    try {
+      const response = await axios.post(`${API}/sessions`, {
+        name: `Chat ${new Date().toLocaleDateString()}`
+      });
+
+      const newSessionId = response.data.session_id;
+      setActiveSession(newSessionId);
+      
+      // Load sessions and messages for new session
+      await loadSessions();
+      await loadSessionMessages(newSessionId);
+      
+    } catch (error) {
+      console.error('Error creating session:', error);
+    }
+  };
+
+  const switchSession = async (sessionId) => {
+    setActiveSession(sessionId);
+    await loadSessionMessages(sessionId);
+  };
+
+  const loadSessions = async () => {
+    try {
+      const response = await axios.get(`${API}/sessions`);
+      setSessions(response.data);
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    }
+  };
+
+  const loadSessionMessages = async (sessionId) => {
+    try {
+      const response = await axios.get(`${API}/sessions/${sessionId}/messages`);
+      const formattedMessages = response.data.map(msg => ({
+        id: msg.id,
+        text: msg.text,
+        sender: msg.sender,
+        timestamp: new Date(msg.timestamp)
+      }));
+      setMessages(formattedMessages);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      setMessages([]);
+    }
+  };
+
+  // Load initial data
+  useEffect(() => {
+    const initializeApp = async () => {
+      setLoading(true);
+      try {
+        await loadSessions();
+      } catch (error) {
+        console.error('Error initializing app:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setSessions(prev => prev.map(s => ({ ...s, active: false })).concat(newSession));
-    setActiveSession(newSessionId);
-    setMessages([{
-      id: Date.now(),
-      text: "Hello! I'm Aura, your friendly AI assistant. How can I help you today?",
-      sender: 'ai',
-      timestamp: new Date(),
-    }]);
-  };
+    initializeApp();
+  }, []);
 
-  const switchSession = (sessionId) => {
-    setSessions(prev => prev.map(s => ({ ...s, active: s.id === sessionId })));
-    setActiveSession(sessionId);
-    // In real app, load session messages here
-  };
+  // Auto-select first session if none selected
+  useEffect(() => {
+    if (sessions.length > 0 && !activeSession) {
+      const firstSession = sessions[0];
+      setActiveSession(firstSession.session_id);
+      loadSessionMessages(firstSession.session_id);
+    }
+  }, [sessions, activeSession]);
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -140,17 +203,21 @@ const ChatInterface = () => {
         <ScrollArea className="h-full">
           <div className="p-4">
             <h3 className="text-sm font-semibold text-gray-600 mb-3">Recent Sessions</h3>
-            {sessions.map((session) => (
+            {loading ? (
+              <div className="p-4 text-center text-gray-500">
+                Loading sessions...
+              </div>
+            ) : sessions.map((session) => (
               <Card 
-                key={session.id}
+                key={session.session_id}
                 className={`mb-2 cursor-pointer transition-all duration-200 hover:shadow-md ${
-                  session.active ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+                  activeSession === session.session_id ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
                 }`}
-                onClick={() => switchSession(session.id)}
+                onClick={() => switchSession(session.session_id)}
               >
                 <CardContent className="p-3">
                   <h4 className="font-medium text-sm">{session.name}</h4>
-                  <p className="text-xs text-gray-500 mt-1 truncate">{session.lastMessage}</p>
+                  <p className="text-xs text-gray-500 mt-1 truncate">{session.last_message || 'No messages'}</p>
                 </CardContent>
               </Card>
             ))}
