@@ -357,9 +357,15 @@ const ChatInterface = () => {
                   onClick={isListening ? stopListening : startListening}
                   variant="ghost"
                   size="sm"
+                  disabled={!speechSupported}
                   className={`absolute right-1 top-1 h-8 w-8 ${
-                    isListening ? 'text-red-500 bg-red-50' : 'text-gray-500 hover:bg-gray-100'
+                    isListening ? 'text-red-500 bg-red-50' : 
+                    speechSupported ? 'text-gray-500 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'
                   }`}
+                  title={speechSupported ? 
+                    (isListening ? 'Stop listening' : 'Click to use voice input') : 
+                    'Speech recognition not supported in this browser'
+                  }
                 >
                   {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
