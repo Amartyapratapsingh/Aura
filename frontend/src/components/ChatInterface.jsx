@@ -389,9 +389,20 @@ const ChatInterface = () => {
               </Button>
             </div>
             <p className="text-xs text-gray-500 mt-2 text-center">
-              {isListening ? 'Listening... Speak now!' : 
-               speechSupported ? 'Click the mic button or type to chat with Aura' : 
-               'Type to chat with Aura (Voice input not available in this browser)'}
+              {isListening ? (
+                <span className="text-blue-600 font-medium">🎤 Listening... Speak now!</span>
+              ) : speechSupported ? (
+                <span>
+                  Click the <Mic className="inline h-3 w-3 mx-1" /> mic button or type to chat with Aura
+                  {window.location.protocol === 'http:' && (
+                    <span className="block text-orange-500 text-xs mt-1">
+                      ⚠️ Voice input works best on HTTPS connections
+                    </span>
+                  )}
+                </span>
+              ) : (
+                'Type to chat with Aura (Voice input not available in this browser)'
+              )}
             </p>
           </div>
         </div>
