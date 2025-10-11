@@ -31,6 +31,7 @@ const ChatInterface = () => {
   // Speech recognition setup
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      setSpeechSupported(true);
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition.current = new SpeechRecognition();
       recognition.current.continuous = false;
@@ -52,7 +53,7 @@ const ChatInterface = () => {
         if (event.error === 'not-allowed') {
           alert('Microphone access denied. Please allow microphone permissions and try again.');
         } else if (event.error === 'no-speech') {
-          console.log('No speech detected');
+          console.log('No speech detected - try speaking again');
         } else {
           console.log('Speech recognition error:', event.error);
         }
@@ -67,6 +68,9 @@ const ChatInterface = () => {
         console.log('Speech recognition started');
         setIsListening(true);
       };
+    } else {
+      setSpeechSupported(false);
+      console.log('Speech recognition not supported in this browser');
     }
   }, []);
 
