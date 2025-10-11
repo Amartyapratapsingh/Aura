@@ -71,8 +71,17 @@ const ChatInterface = () => {
 
   const startListening = () => {
     if (recognition.current) {
-      setIsListening(true);
-      recognition.current.start();
+      try {
+        console.log('Starting speech recognition...');
+        setIsListening(true);
+        recognition.current.start();
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        setIsListening(false);
+        alert('Speech recognition is not available. Please check your browser permissions.');
+      }
+    } else {
+      alert('Speech recognition is not supported in your browser.');
     }
   };
 
