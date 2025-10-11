@@ -27,7 +27,7 @@ const ChatInterface = () => {
 
   useEffect(scrollToBottom, [messages]);
 
-  // Mock speech recognition setup
+  // Speech recognition setup
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -40,14 +40,31 @@ const ChatInterface = () => {
         const transcript = event.results[0][0].transcript;
         setInputText(transcript);
         setIsListening(false);
+        console.log('Speech recognition result:', transcript);
       };
 
-      recognition.current.onerror = () => {
+      recognition.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
         setIsListening(false);
+        
+        // Show user-friendly error messages
+        if (event.error === 'not-allowed') {
+          alert('Microphone access denied. Please allow microphone permissions and try again.');
+        } else if (event.error === 'no-speech') {
+          console.log('No speech detected');
+        } else {
+          console.log('Speech recognition error:', event.error);
+        }
       };
 
       recognition.current.onend = () => {
+        console.log('Speech recognition ended');
         setIsListening(false);
+      };
+
+      recognition.current.onstart = () => {
+        console.log('Speech recognition started');
+        setIsListening(true);
       };
     }
   }, []);
