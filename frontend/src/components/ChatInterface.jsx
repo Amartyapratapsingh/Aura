@@ -51,9 +51,12 @@ const ChatInterface = () => {
         
         // Show user-friendly error messages
         if (event.error === 'not-allowed') {
-          alert('Microphone access denied. Please allow microphone permissions and try again.');
+          alert('🎤 Microphone access denied. Please click "Allow" when your browser asks for microphone permission.');
         } else if (event.error === 'no-speech') {
           console.log('No speech detected - try speaking again');
+          // Don't show alert for no-speech, just log it
+        } else if (event.error === 'network') {
+          alert('🎤 Network error. Speech recognition requires an internet connection.');
         } else {
           console.log('Speech recognition error:', event.error);
         }
