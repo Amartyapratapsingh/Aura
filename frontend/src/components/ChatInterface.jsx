@@ -379,7 +379,9 @@ const ChatInterface = () => {
               </Button>
             </div>
             <p className="text-xs text-gray-500 mt-2 text-center">
-              {isListening ? 'Listening... Speak now!' : 'Click the mic button or type to chat with Aura'}
+              {isListening ? 'Listening... Speak now!' : 
+               speechSupported ? 'Click the mic button or type to chat with Aura' : 
+               'Type to chat with Aura (Voice input not available in this browser)'}
             </p>
           </div>
         </div>
