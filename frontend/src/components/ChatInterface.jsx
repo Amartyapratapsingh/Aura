@@ -83,10 +83,17 @@ const ChatInterface = () => {
       } catch (error) {
         console.error('Error starting speech recognition:', error);
         setIsListening(false);
-        alert('Speech recognition is not available. Please check your browser permissions.');
+        
+        if (error.name === 'NotAllowedError') {
+          alert('🎤 Microphone access denied. Please allow microphone permissions in your browser and try again.');
+        } else if (error.name === 'NotSupportedError') {
+          alert('🎤 Speech recognition requires HTTPS. The feature may not work on HTTP connections.');
+        } else {
+          alert('🎤 Speech recognition error: ' + error.message + '. Try refreshing the page or using a different browser.');
+        }
       }
     } else {
-      alert('Speech recognition is not supported in your browser.');
+      alert('🎤 Speech recognition is not supported in your browser. Please type your message instead.');
     }
   };
 
