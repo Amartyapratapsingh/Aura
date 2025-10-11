@@ -4,7 +4,7 @@ import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
-import { Mic, MicOff, Send, Bot, User, Plus } from 'lucide-react';
+import { Mic, MicOff, Send, Bot, User, Plus, Info } from 'lucide-react';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
